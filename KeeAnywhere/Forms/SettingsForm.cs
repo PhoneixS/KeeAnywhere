@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using KeeAnywhere.Configuration;
 using KeeAnywhere.StorageProviders;
 using KeePass.UI;
+using KeePassLib.Native;
 using KeePassLib.Utility;
 
 namespace KeeAnywhere.Forms
@@ -102,6 +103,10 @@ namespace KeeAnywhere.Forms
 
         private void InitAccountsTab()
         {
+            if (NativeLib.IsUnix()) {
+                m_rbStorageLocation_WindowsCredentialManager.Enabled = false;
+            }            
+
             switch (m_configService.PluginConfiguration.AccountStorageLocation)
             {
                 case AccountStorageLocation.WindowsCredentialManager:

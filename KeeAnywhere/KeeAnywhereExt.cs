@@ -45,7 +45,7 @@ namespace KeeAnywhere
         {
             if (_host != null) Terminate();
             if (pluginHost == null) return false;
-            if (NativeLib.IsUnix()) return false;
+            //if (NativeLib.IsUnix()) return false;
 
             _host = pluginHost;
 
@@ -54,7 +54,7 @@ namespace KeeAnywhere
 
             // Load the configuration
             _configService = new ConfigurationService(pluginHost);
-            _configService.Load();
+            _configService.Load(NativeLib.IsUnix());
 
             // Initialize storage providers
             _storageService = new StorageService(_configService);

@@ -9,6 +9,7 @@ using KeeAnywhere.Configuration;
 using KeeAnywhere.Forms.ImagedComboBox;
 using KeeAnywhere.StorageProviders;
 using KeePass.UI;
+using KeePassLib.Native;
 using KeePassLib.Utility;
 
 namespace KeeAnywhere.Forms
@@ -206,7 +207,7 @@ namespace KeeAnywhere.Forms
             {
                 MessageService.ShowWarning(
                     string.Format("Error loading file list for account {0}.\r\nException:", account.DisplayName),
-                    ex);
+                    ex, ex.StackTrace);
             }
 
             SetWaitState(false);
@@ -302,6 +303,7 @@ namespace KeeAnywhere.Forms
 
             if (!m_ilFiletypeIcons.Images.ContainsKey(extension))
             {
+                if (NativeLib.IsUnix()) { return 0; }       // quick work around, need proper linux implementation
                 var image = IconHelper.IconFromExtension(extension, IconHelper.SystemIconSize.Small);
                 if (image == null) return 0;
                 

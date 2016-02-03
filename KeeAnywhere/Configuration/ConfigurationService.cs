@@ -33,11 +33,11 @@ namespace KeeAnywhere.Configuration
             _pluginHost = pluginHost;
         }
 
-        public void Load()
+        public void Load(bool isUnix)
         {
             if (IsLoaded) return;
 
-            LoadPluginConfiguration();
+            LoadPluginConfiguration(isUnix);
 
             switch (PluginConfiguration.AccountStorageLocation)
             {
@@ -98,7 +98,7 @@ namespace KeeAnywhere.Configuration
             this.Accounts = accountsQuery.ToList();
         }
 
-        private void LoadPluginConfiguration()
+        private void LoadPluginConfiguration(bool isUnix)
         {
             var configString = _pluginHost.CustomConfig.GetString(ConfigurationKey_Plugin);
 
@@ -118,7 +118,7 @@ namespace KeeAnywhere.Configuration
 
             if (PluginConfiguration == null)
             {
-                this.PluginConfiguration = new PluginConfiguration();
+                this.PluginConfiguration = new PluginConfiguration(isUnix);
             }
         }
 
