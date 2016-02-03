@@ -24,6 +24,16 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="Execute" command="bin/Debug/KeePass.exe --debug -pw:sample bin/Debug/Databases/Sample.kdbx" />
+      </CustomCommands>
+    </CustomCommands>
+    <EnvironmentVariables>
+      <EnvironmentVariables>
+        <Variable name="MONO_TRACE_LISTENER" value="Console.Error" />
+      </EnvironmentVariables>
+    </EnvironmentVariables>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -33,6 +43,40 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="Execute" command="bin/Release/KeePass.exe -pw:sample bin/Release/Databases/Sample.kdbx" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleasePlgx|AnyCPU'">
+    <OutputPath>bin\ReleasePlgx\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>True</Optimize>
+    <DebugType>none</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <WarningLevel>4</WarningLevel>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="rm &quot;${TargetFile}&quot;" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+  </PropertyGroup>
+  <!-- You can add a property group just for the plgx stuff or you can add to existing property groups -->
+  <PropertyGroup>
+    <PlgxConfiguration>
+      <Prerequisites>
+        <KeePassVersion>2.25</KeePassVersion>
+        <!-- <OS>Windows</OS> -->
+        <!--DotNetVersion>4.5</DotNetVersion -->
+      </Prerequisites>
+    </PlgxConfiguration>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BouncyCastle.Crypto, Version=1.7.4137.9688, Culture=neutral, PublicKeyToken=a4292a325f69b123, processorArchitecture=MSIL">
@@ -243,11 +287,18 @@
     <None Include="KeePass.exe.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <ExcludeFromPlgx />
+    </None>
+    <None Include="Databases\Sample.kdbx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <ExcludeFromPlgx />
+    </None>
+    <None Include="KeePass.config.xml">
       <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <ExcludeFromPlgx />
     </None>
     <None Include="packages.config">
       <ExcludeFromPlgx />
-      <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -261,21 +312,19 @@
     <Content Include="Resources\KeeAnywhere_48x48.png" />
   </ItemGroup>
   <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
-  <!-- You can add a property group just for the plgx stuff or you can add to existing property groups -->
-  <PropertyGroup>
-    <PlgxConfiguration>
-      <Prerequisites>
-        <KeePassVersion>2.31</KeePassVersion>
-        <!-- <OS>Windows</OS> -->
-        <!-- <DotNetVersion>4.5</DotNetVersion> -->
-      </Prerequisites>
-    </PlgxConfiguration>
-  </PropertyGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="AfterClean">
+    <Delete Files="$(OutputPath)KeePass.exe" />
+    <RemoveDir Directories="$(OutputPath)Databases" Condition="Exists('$(OutputPath)Databases')" />
+  </Target>
+  <Target Name="AfterBuild" Condition="'$(Configuration)' == 'ReleasePlgx'">
+    <CallTarget Targets="BuildPlgx" />
+    <Delete Files="$(TargetPath)" />
+  </Target>
   <Import Project="..\packages\PlgxTool.1.0.0\build\PlgxTool.targets" Condition="Exists('..\packages\PlgxTool.1.0.0\build\PlgxTool.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -283,15 +332,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\PlgxTool.1.0.0\build\PlgxTool.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\PlgxTool.1.0.0\build\PlgxTool.targets'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  -->
-  <Target Name="AfterBuild" Condition="'$(Configuration)' == 'Release'">
-    <CallTarget Targets="BuildPlgx" />
-    <!--<Delete Files="$(TargetPath)" />-->
   </Target>
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />
 </Project>
