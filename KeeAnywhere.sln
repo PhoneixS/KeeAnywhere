@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
+# Visual Studio 2012
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeeAnywhere", "KeeAnywhere\KeeAnywhere.csproj", "{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}"
@@ -16,14 +16,19 @@ Global
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 		ReleasePlgx|Any CPU = ReleasePlgx|Any CPU
+		ReleasePlgx - Linux|Any CPU = ReleasePlgx - Linux|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.ReleasePlgx - Linux|Any CPU.ActiveCfg = ReleasePlgx - Linux|Any CPU
+		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.ReleasePlgx - Linux|Any CPU.Build.0 = ReleasePlgx - Linux|Any CPU
 		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.ReleasePlgx|Any CPU.ActiveCfg = ReleasePlgx|Any CPU
 		{8E40EDF5-06B8-4059-8B19-CB90D937FEBB}.ReleasePlgx|Any CPU.Build.0 = ReleasePlgx|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
