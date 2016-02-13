@@ -45,7 +45,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <CustomCommands>
       <CustomCommands>
-        <Command type="Execute" command="bin/Release/KeePass.exe -pw:sample bin/Release/Databases/Sample.kdbx" />
+        <Command type="Execute" command="bin/Release/KeePass.exe --debug -pw:sample bin/Release/Databases/Sample.kdbx" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -61,9 +61,26 @@
     <WarningLevel>4</WarningLevel>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="rm &quot;${TargetFile}&quot;" />
+        <Command type="Execute" command="bin/ReleasePlgx/KeePass.exe --debug -pw:sample bin/ReleasePlgx/Databases/Sample.kdbx" />
       </CustomCommands>
     </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleasePlgx - Linux|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\ReleasePlgx\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="Execute" command="bin/ReleasePlgx/KeePass.exe --debug -pw:sample bin/ReleasePlgx/Databases/Sample.kdbx" />
+        <Command type="AfterBuild" command="./package.sh" workingdir="${SolutionDir}" externalConsole="True" />
+      </CustomCommands>
+    </CustomCommands>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
   </PropertyGroup>
   <PropertyGroup>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
@@ -84,6 +101,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
@@ -135,9 +153,6 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
       <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Net.Http, Version=2.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\net40\System.Net.Http.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http.Extensions, Version=2.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\net45\System.Net.Http.Extensions.dll</HintPath>

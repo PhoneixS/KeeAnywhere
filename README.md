@@ -29,6 +29,7 @@ Supported providers (in alphabetical order):
 
 # Building
 Run *build.cmd* and see output in folder *build*. For further details see [BUILD.md](BUILD.md).
+Linux - Run *build.sh* and see output in folder *build*. For futher details see [BUILD_UNIX.md](BUILD_UNIX.md)
 
 
 # Contributing
