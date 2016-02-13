@@ -5,6 +5,7 @@
 *.suo
 *.user
 *.sln.docstates
+*.userprefs
 
 # Build results
 [Dd]ebug/
@@ -130,6 +131,7 @@ publish/
 
 # NuGet Packages Directory
 packages/*
+.nuget/
 ## TODO: If the tool you use requires repositories.config
 ## uncomment the next line
 #!packages/repositories.config

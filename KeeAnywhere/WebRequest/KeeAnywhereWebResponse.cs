@@ -19,6 +19,13 @@ namespace KeeAnywhere.WebRequest
             _stream = stream;
         }
 
+		public override void Close ()
+		{
+			if (_stream != null) {
+				_stream.Close ();
+			}
+		}
+
         public override Stream GetResponseStream()
         {
             return _stream;

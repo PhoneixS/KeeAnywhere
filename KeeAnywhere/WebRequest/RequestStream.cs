@@ -15,15 +15,6 @@ namespace KeeAnywhere.WebRequest
             this.request = request;
         }
 
-        public override void Close()
-        {
-            if (NativeLib.IsUnix()) // mono does not automatically call GetResponse
-            {
-                this.request.GetResponse();
-            }
-            base.Close();
-        }
-
         List<byte> bytes = new List<byte>();
         public override bool CanRead
         {
