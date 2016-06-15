@@ -32,8 +32,8 @@ namespace KeeAnywhere.StorageProviders.GoogleDrive
 
         //TODO: Change API keys!!!
 
-        internal const string GoogleDriveClientId = "dummy";
-        internal const string GoogleDriveClientSecret = "dummy";
+		internal const string GoogleDriveClientId = "dummy";
+		internal const string GoogleDriveClientSecret = "dummy";
 
         internal const string RedirectUri = "urn:ietf:wg:oauth:2.0:oob:auto";
 
@@ -49,7 +49,7 @@ namespace KeeAnywhere.StorageProviders.GoogleDrive
                 account.Id, 
                 CancellationToken.None,
                 new AccountDataStore(account)
-                );
+            );
 
             var initializer = new BaseClientService.Initializer()
             {
