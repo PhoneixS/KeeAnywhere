@@ -109,11 +109,11 @@
     <Reference Include="CredentialManagement, Version=1.0.2.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\packages\CredentialManagement.1.0.2\lib\net35\CredentialManagement.dll</HintPath>
     </Reference>
+    <Reference Include="BouncyCastle.Crypto">
+      <HintPath>..\packages\BouncyCastle.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
     <Reference Include="KoenZomers.OneDrive.Api, Version=1.4.0.0, Culture=neutral, PublicKeyToken=c94340d84666bdcb">
       <HintPath>..\packages\KoenZomers.OneDrive.Api.1.4.0.0\lib\KoenZomers.OneDrive.Api.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Apis.Drive.v3">
-      <HintPath>..\packages\Google.Apis.Drive.v3.1.13.1.518\lib\portable-net45+netcore45+wpa81+wp8\Google.Apis.Drive.v3.dll</HintPath>
     </Reference>
     <Reference Include="Dropbox.Api">
       <HintPath>..\packages\Dropbox.Api.3.2.1\lib\net45\Dropbox.Api.dll</HintPath>
@@ -124,14 +124,14 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Google.Apis">
+      <HintPath>..\packages\Google.Apis.1.13.1\lib\net45\Google.Apis.dll</HintPath>
+    </Reference>
     <Reference Include="Google.Apis.Core">
       <HintPath>..\packages\Google.Apis.Core.1.13.1\lib\net45\Google.Apis.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Zlib.Portable">
-      <HintPath>..\packages\Zlib.Portable.Signed.1.11.0\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch+MonoAndroid\Zlib.Portable.dll</HintPath>
-    </Reference>
-    <Reference Include="Google.Apis">
-      <HintPath>..\packages\Google.Apis.1.13.1\lib\net45\Google.Apis.dll</HintPath>
+    <Reference Include="Google.Apis.Drive.v3">
+      <HintPath>..\packages\Google.Apis.Drive.v3.1.13.1.518\lib\portable-net45+netcore45+wpa81+wp8\Google.Apis.Drive.v3.dll</HintPath>
     </Reference>
     <Reference Include="Google.Apis.PlatformServices">
       <HintPath>..\packages\Google.Apis.1.13.1\lib\net45\Google.Apis.PlatformServices.dll</HintPath>
@@ -157,11 +157,13 @@
     <Reference Include="System.Net.Http.Extensions">
       <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\net45\System.Net.Http.Extensions.dll</HintPath>
     </Reference>
-    <Reference Include="BouncyCastle.Crypto">
-      <HintPath>..\packages\BouncyCastle.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
+    <Reference Include="Zlib.Portable">
+      <HintPath>..\packages\Zlib.Portable.Signed.1.11.0\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch+MonoAndroid\Zlib.Portable.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BrowserHelper.cs" />
+    <Compile Include="CloudPath.cs" />
     <Compile Include="Configuration\AccountConfiguration.cs" />
     <Compile Include="Configuration\PluginConfiguration.cs" />
     <Compile Include="Configuration\ConfigurationService.cs" />
@@ -234,6 +236,7 @@
     </Compile>
     <Compile Include="StorageProviders\OneDrive\OneDriveStorageConfigurator.cs" />
     <Compile Include="StorageProviders\StorageDescriptor.cs" />
+    <Compile Include="StorageProviders\StorageProviderExtensions.cs" />
     <Compile Include="StorageProviders\StorageProviderItem.cs" />
     <Compile Include="StorageProviders\StorageProviderItemType.cs" />
     <Compile Include="StorageProviders\StorageRegistry.cs" />
