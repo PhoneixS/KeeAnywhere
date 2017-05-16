@@ -35,7 +35,7 @@ namespace KeeAnywhere.Configuration
             _pluginHost = pluginHost;
         }
 
-        public void Load(bool isUnix)
+        public void Load()
         {
             if (IsLoaded) return;
 
@@ -125,7 +125,7 @@ namespace KeeAnywhere.Configuration
             _pluginHost.CustomConfig.SetString(ConfigurationKey_LastUsedPluginVersion, this.LastUsedPluginVersion.ToString());
         }
 
-        private void LoadPluginConfiguration(bool isUnix)
+        private void LoadPluginConfiguration()
         {
             var configString = _pluginHost.CustomConfig.GetString(ConfigurationKey_Plugin);
 
@@ -148,7 +148,7 @@ namespace KeeAnywhere.Configuration
 
             if (PluginConfiguration == null)
             {
-                this.PluginConfiguration = new PluginConfiguration(isUnix);
+                this.PluginConfiguration = new PluginConfiguration();
             }
         }
 

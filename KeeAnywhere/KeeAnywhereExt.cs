@@ -55,11 +55,13 @@ namespace KeeAnywhere
             FixGoogleApiDependencyLoading();
 
             // WebBrowser Feature Control 
-            SetBrowserFeatureControl();
+			if (!NativeLib.IsUnix()) {
+				SetBrowserFeatureControl ();
+			}
 
             // Load the configuration
             _configService = new ConfigurationService(pluginHost);
-            _configService.Load(NativeLib.IsUnix());
+            _configService.Load();
 
             // Initialize storage providers
             _storageService = new StorageService(_configService);

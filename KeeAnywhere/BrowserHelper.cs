@@ -18,7 +18,7 @@ namespace KeeAnywhere
         public static uint GetBrowserEmulationMode()
         {
             int browserVersion = 7;
-            using (var ieKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Internet Explorer",
+			using (var ieKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Internet Explorer",
                 RegistryKeyPermissionCheck.ReadSubTree,
                 System.Security.AccessControl.RegistryRights.QueryValues))
             {
