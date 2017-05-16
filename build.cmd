@@ -1,5 +1,5 @@
 @echo off
-set version=0.3.0-unstable
+set version=1.3.1
 set zip="packages\7-Zip.CommandLine.9.20.0\tools\7za.exe"
 set msbuildcmd="C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsMSBuildCmd.bat"
 
@@ -25,6 +25,9 @@ xcopy KeeAnywhere\bin\Release\*.* build\bin
 del build\bin\*.plgx build\bin\*.pdb build\bin\*.xml build\bin\*.config build\bin\KeePass.*
 %zip% a -tzip build\dist\KeeAnywhere-%version%.zip .\build\bin\*
 
+xcopy /s /i chocolatey build\chocolatey
+xcopy KeeAnywhere\bin\Release\KeeAnywhere.plgx build\chocolatey\tools
+choco pack build\chocolatey\keepass-plugin-keeanywhere.nuspec --version %version% --outputdirectory build\dist  
 
 
 :final

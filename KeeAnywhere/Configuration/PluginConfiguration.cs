@@ -1,4 +1,7 @@
+using System;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace KeeAnywhere.Configuration
 {
@@ -11,16 +14,21 @@ namespace KeeAnywhere.Configuration
         public bool IsOfflineCacheEnabled { get; set; }
 
         [DataMember]
+        [JsonConverter(typeof(StringEnumConverter))]
         public AccountStorageLocation AccountStorageLocation { get; set; }
 
-        public PluginConfiguration(bool isUnix)
+        [DataMember]
+        public AccountIdentifier FilePickerLastUsedAccount { get; set; }
+
+        [DataMember]
+        public DateTime DonationDialogLastShown { get; set; }
+
+
+        public PluginConfiguration()
         {
             this.IsOfflineCacheEnabled = true;
-            if (isUnix) {
-                this.AccountStorageLocation = AccountStorageLocation.KeePassConfig;
-            } else {
-                this.AccountStorageLocation = AccountStorageLocation.WindowsCredentialManager;
-            }
+            this.AccountStorageLocation = AccountStorageLocation.LocalUserSecureStore;
+            this.DonationDialogLastShown = DateTime.MinValue;
         }
     }
 }

@@ -24,7 +24,7 @@ namespace KeeAnywhere.StorageProviders.Dropbox
             get
             {
                 if (_api == null)
-                    _api = new DropboxClient(account.Secret);
+                    _api = DropboxHelper.GetApi(account.Secret);
 
                 return _api;
             }
@@ -43,8 +43,6 @@ namespace KeeAnywhere.StorageProviders.Dropbox
         public async Task<bool> Save(Stream stream, string path)
         {
             path = RootPath(path);
-
-            //var ci = new CommitInfo(path);
 
             var result = await Api.Files.UploadAsync(path, WriteMode.Overwrite.Instance, body: stream);
 
@@ -71,10 +69,18 @@ namespace KeeAnywhere.StorageProviders.Dropbox
             return items.ToArray();
         }
 
+        public bool IsFilenameValid(string filename)
+        {
+            if (string.IsNullOrEmpty(filename)) return false;
+
+            char[] invalidChars = { '<', '>', '/', '\\', ':', '*', '?', '"', '|' };
+            return filename.All(c => c >= 32 && !invalidChars.Contains(c));
+        }
+
         private static string RootPath(string path)
         {
-            if (!path.StartsWith("/"))
-                path = "/" + path;
+            if (path[0] != CloudPath.DirectorySeparatorChar)
+                path = CloudPath.DirectorySeparatorChar + path;
 
             return path;
         }
@@ -84,7 +90,8 @@ namespace KeeAnywhere.StorageProviders.Dropbox
             var result = new StorageProviderItem
             {
                 Name = item.Name,
-                Id = Path.Combine(parent.Id, item.PathLower),
+                Id = item.PathLower,
+                //Id = CloudPath.Combine(parent.Id, item.PathLower),
                 ParentReferenceId = parent.Id
             };
 

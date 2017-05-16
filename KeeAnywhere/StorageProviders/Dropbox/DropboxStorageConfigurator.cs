@@ -8,8 +8,15 @@ namespace KeeAnywhere.StorageProviders.Dropbox
 {
     public class DropboxStorageConfigurator : IStorageConfigurator, IOAuth2Provider
     {
+        private readonly bool _isAccessRestricted;
+
         private string _state;
         private OAuth2Response _oauthResponse;
+
+        public DropboxStorageConfigurator(bool isAccessRestricted)
+        {
+            this._isAccessRestricted = isAccessRestricted;
+        }
 
         public async Task<AccountConfiguration> CreateAccount()
         {
@@ -17,15 +24,14 @@ namespace KeeAnywhere.StorageProviders.Dropbox
 
             if (!isOk) return null;
 
-            var api = new DropboxClient(_oauthResponse.AccessToken);
-
+            var api = DropboxHelper.GetApi(_oauthResponse.AccessToken);
             var owner = await api.Users.GetCurrentAccountAsync();
 
             var account = new AccountConfiguration()
             {
                 Id = owner.AccountId,
                 Name = owner.Name.DisplayName,
-                Type = StorageType.Dropbox,
+                Type = _isAccessRestricted ? StorageType.DropboxRestricted : StorageType.Dropbox,
                 Secret = _oauthResponse.AccessToken,
             };
 
@@ -36,7 +42,7 @@ namespace KeeAnywhere.StorageProviders.Dropbox
         {
             _state = Guid.NewGuid().ToString("N");
             this.AuthorizationUrl = DropboxOAuth2Helper.GetAuthorizeUri(OAuthResponseType.Token,
-                DropboxHelper.DropboxClientId, RedirectionUrl, _state);
+                _isAccessRestricted ? DropboxHelper.DropboxAppFolderOnlyClientId : DropboxHelper.DropboxFullAccessClientId, RedirectionUrl, _state);
         }
 
         public Task<bool> Claim(Uri uri, string documentTitle)
@@ -57,9 +63,9 @@ namespace KeeAnywhere.StorageProviders.Dropbox
                 cs.SetResult(true);
                 return cs.Task;
             }
-            catch
+            catch (Exception ex)
             {
-                cs.SetResult(false);
+                cs.SetException(ex);
                 return cs.Task;
             }
         }

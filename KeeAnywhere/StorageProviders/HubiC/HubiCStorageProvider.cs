@@ -42,6 +42,11 @@ namespace KeeAnywhere.StorageProviders.HubiC
 
             var client = await GetClient();
             var normalizedPath = path.StartsWith("/") ? path.Remove(0, 1) : path;
+            var folderName = CloudPath.GetDirectoryName(normalizedPath);
+
+            var folder = await client.GetObjects(container, folderName);
+            if (folder == null || !folder.Any())
+                throw new InvalidOperationException(string.Format("Folder does not exist: {0}", folderName));
 
             var isOk = await client.UploadObject(container, normalizedPath, stream);
 
@@ -78,6 +83,14 @@ namespace KeeAnywhere.StorageProviders.HubiC
             });
 
             return ret.ToArray();
+        }
+
+        public bool IsFilenameValid(string filename)
+        {
+            if (string.IsNullOrEmpty(filename)) return false;
+
+            char[] invalidChars = { '/', '\\' };
+            return filename.All(c => c >= 32 && !invalidChars.Contains(c));
         }
 
         protected string NormalizeName(string path)

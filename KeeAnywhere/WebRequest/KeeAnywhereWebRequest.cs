@@ -48,6 +48,8 @@ namespace KeeAnywhere.WebRequest
         {
             if (_response != null) return _response;
 
+            if (!_provider.IsCompletePathValid(_itemPath)) throw new IOException(string.Format("Path is invalid: {0}", _itemPath));
+
             if (this.Method == IOConnection.WrmDeleteFile)
             {
                 //var isOk = Task.Run(async () => await _provider.Delete(_itemPath));
@@ -91,7 +93,8 @@ namespace KeeAnywhere.WebRequest
             {
                 var stream = Task.Run(async () => await _provider.Load(_itemPath));
 
-                _response = new KeeAnywhereWebResponse(stream.Result);
+                var wrappeedStream = new WrapperStream(stream.Result); // Issue #44: Sometimes can't load kdbx file (Dropbox, hubiC)
+                _response = new KeeAnywhereWebResponse(wrappeedStream);
             }
 
             return _response;

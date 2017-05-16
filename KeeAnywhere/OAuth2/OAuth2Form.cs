@@ -60,6 +60,7 @@ namespace KeeAnywhere.OAuth2
             if (m_isPreAuthorization)
             {
                 m_isPreAuthorization = false;
+                m_browser.Stop();
                 m_browser.Navigate(m_provider.AuthorizationUrl);
                 return;
             }
@@ -71,14 +72,18 @@ namespace KeeAnywhere.OAuth2
                 return;
             }
 
+            m_pnlWait.Visible = true;
+            m_browser.Visible = false;
+
             try
             {
                 var isOk = await m_provider.Claim(e.Url, m_browser.DocumentTitle);
-                DialogResult = isOk ? DialogResult.OK : DialogResult.Cancel;
+                DialogResult = isOk ? DialogResult.OK : DialogResult.Abort;
             }
-            catch
+            catch (Exception ex)
             {
-                DialogResult = DialogResult.Cancel;
+                this.LastException = ex;
+                DialogResult = DialogResult.Abort;
             }
             finally
             {
@@ -87,7 +92,9 @@ namespace KeeAnywhere.OAuth2
             }
         }
 
-        private async void OnNavigating(object sender, WebBrowserNavigatingEventArgs e)
+        public Exception LastException { get; set; }
+
+        private void OnNavigating(object sender, WebBrowserNavigatingEventArgs e)
         {
             Debug.WriteLine("Navigating " + e.Url);
         }

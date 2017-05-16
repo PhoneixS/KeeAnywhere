@@ -2,7 +2,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 using KeeAnywhere.Configuration;
+using KeeAnywhere.Forms;
 using KeeAnywhere.StorageProviders;
+using KeePass.UI;
 using KeePassLib.Utility;
 
 namespace KeeAnywhere
@@ -11,6 +13,8 @@ namespace KeeAnywhere
     {
         private readonly ConfigurationService _configService;
         private readonly StorageService _storageService;
+
+        private bool _donationDialogAlreadyShownInThisUpgradedSession;
 
         public UIService(ConfigurationService configService, StorageService storageService)
         {
@@ -47,6 +51,63 @@ namespace KeeAnywhere
             existingAccount.Secret = newAccount.Secret;
 
             return existingAccount;
+        }
+
+        public async Task CheckOrUpdateAccount(AccountConfiguration account)
+        {
+            var provider = _storageService.GetProviderByAccount(account);
+            if (provider == null) return;
+
+            try
+            {
+                var root = await provider.GetRootItem();
+                var result = await provider.GetChildrenByParentItem(root);
+                if (result != null)
+                {
+                    MessageService.ShowInfo("Connecting to this account succeeded.");
+                    return;
+                }
+
+                MessageService.ShowWarning("Connecting to this account failed!", "Root folder could not be read.", "Try to re-authorize in next step.");
+            }
+            catch (Exception ex)
+            {
+                MessageService.ShowWarning("Connecting to this account failed!", ex, "Try to re-authorize in next step.");
+
+            }
+
+            var newAccount = await _storageService.CreateAccount(account.Type);
+            if (newAccount == null)
+            {
+                MessageService.ShowWarning("Re-Authorization failed or cancelled by user!");
+            }
+            else if (newAccount.Id != account.Id)
+            {
+                MessageService.ShowWarning("Re-Authorization failed!", "The entered credentials do not belong to this account.");
+            }
+            else
+            {
+                account.Secret = newAccount.Secret;
+                MessageService.ShowInfo("Re-Authorization succeeded!");
+            }
+        }
+
+        public void ShowDonationDialog()
+        {
+            var lastShown = _configService.PluginConfiguration.DonationDialogLastShown;
+            var isUpgraded = _configService.IsUpgraded && !_donationDialogAlreadyShownInThisUpgradedSession;
+
+            if (!isUpgraded && (lastShown == DateTime.MaxValue || lastShown.AddMonths(1) > DateTime.Today))
+                return;
+
+            var dlg = new DonationForm();
+            UIUtil.ShowDialogAndDestroy(dlg);
+
+            _configService.PluginConfiguration.DonationDialogLastShown = dlg.IsDontShowMessageAgain
+                ? DateTime.MaxValue
+                : DateTime.Today;
+
+            _donationDialogAlreadyShownInThisUpgradedSession = true;
         }
     }
 }
