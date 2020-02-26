@@ -348,7 +348,6 @@ namespace KeeAnywhere.Forms
             if (string.IsNullOrEmpty(extension)) return IconDocument;
 
             return extension.ToLower() == ".kdbx" ? IconDatabase : IconDocument;
-                if (NativeLib.IsUnix()) { return 0; }       // quick work around, need proper linux implementation
         }
 
         private async Task SetProvider(IStorageProvider provider)

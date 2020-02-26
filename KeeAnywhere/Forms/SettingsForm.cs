@@ -109,7 +109,7 @@ namespace KeeAnywhere.Forms
         private void InitAccountsTab()
         {
             if (NativeLib.IsUnix()) {
-                m_rbStorageLocation_WindowsCredentialManager.Enabled = false;
+                m_rbStorageLocation_LocalUserSecureStore.Enabled = false;
             }            
 
             switch (m_configService.PluginConfiguration.AccountStorageLocation)
