@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <metadata>
+    <id>keepass-plugin-keeanywhere</id>
+    <title>KeePass Plugin KeeAnywhere</title>
+    <version>1.6.0</version>
+    <authors>Daniel Bölts</authors>
+    <owners>Kyrodan</owners>
+    <summary>Plugin for KeePass 2.x to to add support for cloud storage providers</summary>
+    <description>
+KeeAnywhere is a KeePass plugin that provides access to cloud storage providers (cloud drives). The main goal is to offer a simple UI while integrating deeply into KeePass. This covers all kind of users: novices, experienced and power users.
+
+Supported providers:
+
+* Amazon Drive (Experimental)
+* Amazon AWS S3
+* Box
+* Dropbox
+* Google Drive
+* HiDrive
+* hubiC
+* OneDrive
+    </description>
+    <packageSourceUrl>https://github.com/kyrodan/keeanywhere/tree/master/chocolatey</packageSourceUrl>
+    <projectUrl>https://keeanywhere.de</projectUrl>
+    <projectSourceUrl>https://github.com/Kyrodan/KeeAnywhere</projectSourceUrl>
+    <bugTrackerUrl>https://github.com/Kyrodan/KeeAnywhere/issues</bugTrackerUrl>
+    <docsUrl>https://keeanywhere.de/use/start</docsUrl>
+    <iconUrl>https://cdn.rawgit.com/Kyrodan/KeeAnywhere/95b05e59b80690037bfb1952715d5104fbf99b71/KeeAnywhere/Resources/KeeAnywhere_48x48.png</iconUrl>
+    <tags>keepass plugin backup sync cloud</tags>
+    <copyright>© 2015-2020 Daniel Bölts</copyright>
+    <licenseUrl>https://github.com/Kyrodan/KeeAnywhere/blob/master/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <releaseNotes>## 1.6.0 (2020-01-08)
+
+KeePass 2.43 or newer is required now (was 2.40).
+
+### New
+
+- \#116 KeeAnywhere not works with Temporary Access and Secret Keys (PR \#182)
+
+### Fixed
+
+- \#123 KeeAnywhere ignore KeePass Proxy configuration (PR \#163)
+- \#169 KeeAnywhere.dll v1.5.1 plugin incompatible with Keepass 2.41
+- \#184 KeeAnywhere 1.5.1 doesn't work with KeePass 2.43
+- \#189 Adjust links to new Homepage
+
+### Improved
+
+- \#99 About the beer message
+- \#190 Improve Menu Creation for KeePass >= 2.41
+- Updated Dependencies (KeePass)
+
+
+[Full Changelog](https://github.com/Kyrodan/KeeAnywhere/blob/master/CHANGELOG.md)
+    </releaseNotes>
+    <dependencies>
+      <dependency id="keepass" version="[2.43, 3.0)" />
+      <dependency id="dotnet4.5.2" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

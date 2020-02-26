@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Windows.Forms;
 using KeeAnywhere.Configuration;
 using KeeAnywhere.Forms;
+using KeeAnywhere.Offline;
 using KeeAnywhere.StorageProviders;
 using KeePass.Plugins;
 using KeePass.UI;
@@ -27,9 +29,23 @@ namespace KeeAnywhere
         private ToolStripMenuItem _tsSaveToCloudDrive;
         private ToolStripMenuItem _tsSaveCopyToCloudDrive;
 
-        private ToolStripMenuItem _tsShowSettings;
         private UIService _uiService;
+        private CacheManagerService _cacheManagerService;
+        private KpResources _kpResources;
 
+        /// <summary>
+        /// Static Constructor; implemented to fix:
+        /// * https://github.com/Kyrodan/KeeAnywhere/issues/141
+        /// * https://github.com/Kyrodan/KeeAnywhere/issues/152
+        /// </summary>
+        static KeeAnywhereExt()
+        {
+            // Some binding redirection fixes for Google Drive API
+            FixDependencyLoading();
+
+            // Enable new TLS-Versions (see #152)
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+        }
 
         /// <summary>
         ///     Returns the URL where KeePass can check for updates of this plugin
@@ -51,9 +67,6 @@ namespace KeeAnywhere
 
             _host = pluginHost;
 
-            // Some binding redirection fixes for Google Drive API
-            FixGoogleApiDependencyLoading();
-
             // WebBrowser Feature Control 
             SetBrowserFeatureControl();
 
@@ -61,19 +74,19 @@ namespace KeeAnywhere
             _configService = new ConfigurationService(pluginHost);
             _configService.Load(NativeLib.IsUnix());
 
+            // Initialize CacheManager
+            _cacheManagerService = new CacheManagerService(_configService, _host);
+            _cacheManagerService.RegisterEvents();
+
             // Initialize storage providers
-            _storageService = new StorageService(_configService);
-            _storageService.Register();
+            _storageService = new StorageService(_configService, _cacheManagerService);
+            _storageService.RegisterPrefixes();
 
             // Initialize UIService
             _uiService = new UIService(_configService, _storageService);
 
-
-            // Add the menu option for configuration under Tools
-            var menu = _host.MainWindow.ToolsMenu.DropDownItems;
-            _tsShowSettings = new ToolStripMenuItem("KeeAnywhere Settings...", PluginResources.KeeAnywhere_16x16);
-            _tsShowSettings.Click += OnShowSetting;
-            menu.Add(_tsShowSettings);
+            // Initialize KeePass-Resource Service
+            _kpResources = new KpResources(_host);
 
             // Add "Open from Cloud Drive..." to File\Open menu.
             var fileMenu = _host.MainWindow.MainMenu.Items["m_menuFile"] as ToolStripMenuItem;
@@ -107,8 +120,27 @@ namespace KeeAnywhere
                 }
             }
 
+            if (_configService.IsUpgraded)
+            {
+                _uiService.ShowChangelog();
+            }
+
             // Indicate that the plugin started successfully
             return true;
+        }
+
+        public override ToolStripMenuItem GetMenuItem(PluginMenuType t)
+        {
+            if (t == PluginMenuType.Main)
+            {
+                // Add the menu option for configuration under Tools
+                var tsShowSettings = new ToolStripMenuItem("KeeAnywhere Settings...", PluginResources.KeeAnywhere_16x16);
+                tsShowSettings.Click += OnShowSetting;
+
+                return tsShowSettings;
+            }
+
+            return null; // No menu items in other locations
         }
 
         private void SetBrowserFeatureControl()
@@ -158,8 +190,10 @@ namespace KeeAnywhere
             // First usage: register new account
             if (!HasAccounts()) return;
 
+            _uiService.ShowDonationDialog();
+
             var form = new CloudDriveFilePicker();
-            form.InitEx(_configService, _storageService, CloudDriveFilePicker.Mode.Save);
+            form.InitEx(_configService, _storageService, _kpResources, CloudDriveFilePicker.Mode.Save);
             var result = UIUtil.ShowDialogAndDestroy(form);
 
             if (result != DialogResult.OK)
@@ -177,8 +211,10 @@ namespace KeeAnywhere
             // First usage: register new account
             if (!HasAccounts()) return;
 
+            _uiService.ShowDonationDialog();
+
             var form = new CloudDriveFilePicker();
-            form.InitEx(_configService, _storageService, CloudDriveFilePicker.Mode.Open);
+            form.InitEx(_configService, _storageService, _kpResources, CloudDriveFilePicker.Mode.Open);
             var result = UIUtil.ShowDialogAndDestroy(form);
 
             if (result != DialogResult.OK)
@@ -200,7 +236,7 @@ namespace KeeAnywhere
 
             if (result == DialogResult.Yes)
             {
-                OnShowSetting(this, EventArgs.Empty);
+                _uiService.ShowSettingsDialog();
             }
 
             return false;
@@ -228,8 +264,7 @@ namespace KeeAnywhere
             if (_host == null) return;
 
             _configService.Save();
-
-            _host.MainWindow.ToolsMenu.DropDownItems.Remove(_tsShowSettings);
+            _cacheManagerService.UnRegisterEvents();
 
             var fileMenu = _host.MainWindow.MainMenu.Items["m_menuFile"] as ToolStripMenuItem;
             if (fileMenu != null)
@@ -248,18 +283,15 @@ namespace KeeAnywhere
                 }
             }
 
-            _tsShowSettings = null;
             _tsOpenFromCloudDrive = null;
         }
 
         private void OnShowSetting(object sender, EventArgs e)
         {
-            var form = new SettingsForm();
-            form.InitEx(_configService, _uiService);
-            UIUtil.ShowDialogAndDestroy(form);
+            _uiService.ShowSettingsDialog();
         }
 
-        private static void FixGoogleApiDependencyLoading()
+        private static void FixDependencyLoading()
         {
             // Google.Api relies on System.Net.Http.Primitives version 1.5.0.0
             // In general a binding redirect is added to the App.config file.
@@ -271,8 +303,9 @@ namespace KeeAnywhere
             var httpver = new Version(1, 5, 0, 0);
 
             var jsonasm = Assembly.Load("Newtonsoft.Json");
-            var jsonver = new Version(7, 0, 0, 0);
+            //var jsonver = new Version(9, 0, 0, 0);
 
+            var odasm = Assembly.Load("Microsoft.Graph.Core");
 
             AppDomain.CurrentDomain.AssemblyResolve += (s, a) =>
             {
@@ -283,6 +316,9 @@ namespace KeeAnywhere
 
                 if (requestedAssembly.Name == "Newtonsoft.Json" && requestedAssembly.Version < jsonasm.GetName().Version)
                     return jsonasm;
+
+                if (requestedAssembly.Name == "Microsoft.Graph.Core" && requestedAssembly.Version < odasm.GetName().Version)
+                    return odasm;
 
                 return null;
             };

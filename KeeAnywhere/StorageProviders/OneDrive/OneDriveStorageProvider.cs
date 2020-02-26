@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using KeeAnywhere.Configuration;
-using KoenZomers.OneDrive.Api;
-using KoenZomers.OneDrive.Api.Entities;
+using Microsoft.Graph;
 
 namespace KeeAnywhere.StorageProviders.OneDrive
 {
     public class OneDriveStorageProvider : IStorageProvider
     {
         private readonly AccountConfiguration _account;
-        private OneDriveConsumerApi _api;
 
         public OneDriveStorageProvider(AccountConfiguration account)
         {
@@ -22,31 +22,77 @@ namespace KeeAnywhere.StorageProviders.OneDrive
 
         public async Task<Stream> Load(string path)
         {
-            var api = await GetApi();
+            var api = await OneDriveHelper.GetApi(_account);
 
             var escapedpath = Uri.EscapeDataString(path);
-            var stream = await api.DownloadItem(escapedpath);
+            var stream = await api.Drive
+                                    .Root
+                                    .ItemWithPath(escapedpath)
+                                    .Content
+                                    .Request()
+                                    .GetAsync();
 
             return stream;
         }
 
 
-        public async Task<bool> Save(Stream stream, string path)
+        public async Task Save(Stream stream, string path)
         {
-            var api = await GetApi();
+            var api = await OneDriveHelper.GetApi(_account);
 
-            var directory = Uri.EscapeDataString(CloudPath.GetDirectoryName(path));
-            var filename = Uri.EscapeDataString(CloudPath.GetFileName(path));
+            var escapedpath = Uri.EscapeDataString(path);
 
-            var uploadedItem = await api.UploadFileAs(stream, filename, directory);
+            var uploadedItem = await api.Drive
+                        .Root
+                        .ItemWithPath(escapedpath)
+                        .Content
+                        .Request()
+                        .PutAsync<DriveItem>(stream);
 
-            return uploadedItem != null;
+            if (uploadedItem == null)
+                throw new InvalidOperationException("Save to OneDrive failed.");
+
+        }
+
+        public async Task Copy(string sourcePath, string destPath)
+        {
+            var api = await OneDriveHelper.GetApi(_account);
+
+            var escapedpath = Uri.EscapeDataString(sourcePath);
+
+            var destFolder = Uri.EscapeDataString(CloudPath.GetDirectoryName(destPath));
+            var destFilename = CloudPath.GetFileName(destPath);
+            var destItem = await api.Drive.Root.ItemWithPath(destFolder).Request().GetAsync();
+            if (destItem == null)
+                throw new FileNotFoundException("OneDrive: Folder not found.", destFolder);
+
+            await api
+                .Drive
+                .Root
+                .ItemWithPath(escapedpath)
+                .Copy(destFilename, new ItemReference {Id = destItem.Id})
+                .Request(/*new[] {new HeaderOption("Prefer", "respond-async"), }*/)
+                .PostAsync();
+        }
+
+        public async Task Delete(string path)
+        {
+            var api = await OneDriveHelper.GetApi(_account);
+
+            var escapedpath = Uri.EscapeDataString(path);
+            await api
+                    .Drive
+                    .Root
+                    .ItemWithPath(escapedpath)
+                    .Request()
+                    .DeleteAsync();
+
         }
 
         public async Task<StorageProviderItem> GetRootItem()
         {
-            var api = await GetApi();
-            var odItem = await api.GetDriveRoot();
+            var api = await OneDriveHelper.GetApi(_account);
+            var odItem = await api.Drive.Root.Request().GetAsync();
 
             if (odItem == null)
                 return null;
@@ -60,11 +106,24 @@ namespace KeeAnywhere.StorageProviders.OneDrive
         {
             if (parent == null) throw new ArgumentNullException("parent");
 
-            var api = await GetApi();
-            var odChildren = await api.GetChildrenByParentItem(new OneDriveItem {Id = parent.Id});
+            var api = await OneDriveHelper.GetApi(_account);
+
+            var odChildren = await api.Drive.Items[parent.Id].Children.Request().GetAsync();
 
             var children =
-                odChildren.Collection.Select(odItem => CreateStorageProviderItemFromOneDriveItem(odItem)).ToArray();
+                odChildren.Select(odItem => CreateStorageProviderItemFromOneDriveItem(odItem)).ToArray();
+
+            return children;
+        }
+
+        public async Task<IEnumerable<StorageProviderItem>> GetChildrenByParentPath(string path)
+        {
+            var api = await OneDriveHelper.GetApi(_account);
+
+            var odChildren = await api.Drive.Root.ItemWithPath(path).Children.Request().GetAsync();
+
+            var children =
+                odChildren.Select(odItem => CreateStorageProviderItemFromOneDriveItem(odItem)).ToArray();
 
             return children;
         }
@@ -77,29 +136,21 @@ namespace KeeAnywhere.StorageProviders.OneDrive
             return filename.All(c => c >= 32 && !invalidChars.Contains(c));
         }
 
-        protected StorageProviderItem CreateStorageProviderItemFromOneDriveItem(OneDriveItem item)
+        protected StorageProviderItem CreateStorageProviderItemFromOneDriveItem(DriveItem item)
         {
             var providerItem = new StorageProviderItem
             {
-                Type =
+                Type = 
                     item.IsFolder()
                         ? StorageProviderItemType.Folder
                         : (item.IsFile() ? StorageProviderItemType.File : StorageProviderItemType.Unknown),
                 Id = item.Id,
                 Name = item.Name,
                 LastModifiedDateTime = item.LastModifiedDateTime,
-                ParentReferenceId = item.ParentReference != null ? item.ParentReference.Id : null
+                ParentReferenceId = item.ParentReference != null && !string.IsNullOrEmpty(item.ParentReference.Path) ? item.ParentReference.Id : null
             };
 
             return providerItem;
-        }
-
-        public async Task<OneDriveConsumerApi> GetApi()
-        {
-            if (_api == null)
-                _api = await OneDriveHelper.GetApi(_account.Secret);
-
-            return _api;
         }
     }
 }

@@ -15,6 +15,10 @@ namespace KeeAnywhere.Forms
 {
     public partial class CloudDriveFilePicker : Form
     {
+        private const string IconFolder = "folder";
+        private const string IconDatabase = "database";
+        private const string IconDocument = "document";
+
         public enum Mode
         {
             Unknown,
@@ -31,20 +35,23 @@ namespace KeeAnywhere.Forms
         private Cursor m_savedCursor;
         private StorageProviderItem m_selectedItem;
         private Mode m_mode;
+        private KpResources m_kpResources;
 
         public CloudDriveFilePicker()
         {
             InitializeComponent();
         }
 
-        public void InitEx(ConfigurationService configService, StorageService storageService, Mode mode)
+        public void InitEx(ConfigurationService configService, StorageService storageService, KpResources kpResources, Mode mode)
         {
             if (configService == null) throw new ArgumentNullException("configService");
             if (storageService == null) throw new ArgumentNullException("storageService");
+            if (kpResources == null) throw new ArgumentNullException("kpResources");
             if (mode == Mode.Unknown) throw new ArgumentException("mode");
 
             m_configService = configService;
             m_storageService = storageService;
+            m_kpResources = kpResources;
             m_mode = mode;
         }
 
@@ -89,7 +96,10 @@ namespace KeeAnywhere.Forms
             m_isInit = true;
 
 
-            m_ilFiletypeIcons.Images.Add(PluginResources.Folder_16x16);
+            //m_ilFiletypeIcons.Images.Add("folder", PluginResources.Folder_16x16);
+            m_ilFiletypeIcons.Images.Add(IconFolder, m_kpResources.B16x16_Folder);
+            m_ilFiletypeIcons.Images.Add(IconDatabase, m_kpResources.B16x16_KeePass);
+            m_ilFiletypeIcons.Images.Add(IconDocument, m_kpResources.B16x16_Binary);
 
             foreach (var descriptor in StorageRegistry.Descriptors)
             {
@@ -114,11 +124,36 @@ namespace KeeAnywhere.Forms
 
             UpdateAccountsCombobox();
 
-            if (m_cbAccounts.Items.Count > 1)
+            SelectInitialAccount();
+        }
+
+        private void SelectInitialAccount()
+        {
+            if (m_cbAccounts.Items.Count <= 1) return;
+
+            var selidx = 1;
+
+            var accountInfo = m_configService.PluginConfiguration.FilePickerLastUsedAccount;
+            if (accountInfo != null)
             {
-                m_cbAccounts.SelectedIndex = -1;
-                m_cbAccounts.SelectedIndex = 1;
+                var account = m_configService.FindAccount(accountInfo.Type, accountInfo.Name);
+                if (account != null)
+                {
+                    for (var i = 0; i < m_cbAccounts.Items.Count; i++)
+                    {
+                        var item = m_cbAccounts.Items[i];
+
+                        if (item.Item == account)
+                        {
+                            selidx = i;
+                            break;
+                        }
+                    }
+                }
             }
+
+            m_cbAccounts.SelectedIndex = -1;
+            m_cbAccounts.SelectedIndex = selidx;
         }
 
         private void UpdateAccountsCombobox()
@@ -132,7 +167,9 @@ namespace KeeAnywhere.Forms
             {
                 if (descriptor == null || (account.Type != descriptor.Type))
                 {
-                    descriptor = StorageRegistry.Descriptors.Single(_ => _.Type == account.Type);
+                    descriptor = StorageRegistry.Descriptors.SingleOrDefault(_ => _.Type == account.Type);
+                    if (descriptor == null)
+                        continue;
 
                     item = new ImageComboBoxItem()
                     {
@@ -197,18 +234,21 @@ namespace KeeAnywhere.Forms
             if (account == null) return;
 
             SetWaitState(true);
+            m_configService.PluginConfiguration.FilePickerLastUsedAccount = account.GetAccountIdentifier();
+            IStorageProvider provider = null;
             try
             {
-                var provider = m_storageService.GetProviderByAccount(account);
-                await SetProvider(provider);
+                provider = m_storageService.GetProviderByAccount(account);
             }
             catch (Exception ex)
             {
                 MessageService.ShowWarning(
-                    string.Format("Error loading file list for account {0}.\r\nException:", account.DisplayName),
+                    string.Format("Error getting account {0}.\r\nException:", account.DisplayName),
                     ex, ex.StackTrace);
+                
             }
 
+            await SetProvider(provider);
             SetWaitState(false);
         }
 
@@ -235,7 +275,7 @@ namespace KeeAnywhere.Forms
 
         private async Task SetSelectedItem(StorageProviderItem item)
         {
-            if (m_selectedItem == item || item.Type != StorageProviderItemType.Folder) return;
+            if (m_selectedItem == item || (item != null) && item.Type != StorageProviderItemType.Folder) return;
 
             m_selectedItem = item;
 
@@ -245,10 +285,13 @@ namespace KeeAnywhere.Forms
 
         private async Task UpdateListView()
         {
-            if (m_selectedItem == null) return;
-
             m_lvDetails.BeginUpdate();
             m_lvDetails.Items.Clear();
+            if (m_selectedItem == null)
+            {
+                m_lvDetails.EndUpdate();
+                return;
+            }
 
             var info = await GetItemInfo(m_selectedItem);
 
@@ -256,60 +299,56 @@ namespace KeeAnywhere.Forms
             {
                 var lvi = m_lvDetails.Items.Add("..");
                 lvi.Tag = info.Parent;
-                lvi.ImageIndex = 0;
+                lvi.ImageKey = IconFolder;
                 lvi.SubItems.Add(info.Parent.Id);
                 lvi.SubItems.Add("Folder");
                 lvi.SubItems.Add(string.Empty);
             }
 
-            foreach (var child in info.Children)
+            if (info.Children != null)
             {
-                var ext = CloudPath.GetExtension(child.Name);
-                if (m_cbFilter.SelectedIndex == 0 && child.Type == StorageProviderItemType.File && (string.IsNullOrEmpty(ext) || ext.ToLower() != ".kdbx"))
-                    continue;
-
-                var lvi = m_lvDetails.Items.Add(child.Name);
-                lvi.Tag = child;
-
-                lvi.SubItems.Add(child.Id);
-
-                switch (child.Type)
+                foreach (var child in info.Children)
                 {
-                    case StorageProviderItemType.Folder:
-                        lvi.ImageIndex = 0;
-                        lvi.SubItems.Add("Folder");
-                        break;
-                    case StorageProviderItemType.File:
-                        lvi.ImageIndex = GetIconIndex(child.Name);
-                        lvi.SubItems.Add("File");
-                        break;
-                    default:
-                        lvi.SubItems.Add("Unknown");
-                        break;
-                }
+                    var ext = CloudPath.GetExtension(child.Name);
+                    if (m_cbFilter.SelectedIndex == 0 && child.Type == StorageProviderItemType.File &&
+                        (string.IsNullOrEmpty(ext) || ext.ToLower() != ".kdbx"))
+                        continue;
 
-                lvi.SubItems.Add(child.LastModifiedDateTime.ToString());
+                    var lvi = m_lvDetails.Items.Add(child.Name);
+                    lvi.Tag = child;
+
+                    lvi.SubItems.Add(child.Id);
+
+                    switch (child.Type)
+                    {
+                        case StorageProviderItemType.Folder:
+                            lvi.ImageKey = IconFolder;
+                            lvi.SubItems.Add("Folder");
+                            break;
+                        case StorageProviderItemType.File:
+                            lvi.ImageKey = GetIconKey(child.Name);
+                            lvi.SubItems.Add("File");
+                            break;
+                        default:
+                            lvi.SubItems.Add("Unknown");
+                            break;
+                    }
+
+                    lvi.SubItems.Add(child.LastModifiedDateTime.HasValue ? child.LastModifiedDateTime.Value.LocalDateTime.ToString() : null);
+                }
             }
 
             m_lvDetails.EndUpdate();
         }
 
-        private int GetIconIndex(string filename)
+        private string GetIconKey(string filename)
         {
             var extension = CloudPath.GetExtension(filename);
 
-            if (string.IsNullOrEmpty(extension)) return -1;
+            if (string.IsNullOrEmpty(extension)) return IconDocument;
 
-            if (!m_ilFiletypeIcons.Images.ContainsKey(extension))
-            {
+            return extension.ToLower() == ".kdbx" ? IconDatabase : IconDocument;
                 if (NativeLib.IsUnix()) { return 0; }       // quick work around, need proper linux implementation
-                var image = IconHelper.IconFromExtension(extension, IconHelper.SystemIconSize.Small);
-                if (image == null) return 0;
-                
-                m_ilFiletypeIcons.Images.Add(extension, image);
-            }
-
-            return m_ilFiletypeIcons.Images.IndexOfKey(extension);
         }
 
         private async Task SetProvider(IStorageProvider provider)
@@ -326,7 +365,16 @@ namespace KeeAnywhere.Forms
             }
             else
             {
-                var root = await m_provider.GetRootItem();
+                StorageProviderItem root = null;
+                try
+                {
+                    root = await m_provider.GetRootItem();
+                }
+                catch (Exception ex)
+                {
+                    MessageService.ShowWarning("Error getting Root node.\r\nException:", ex);
+                }
+
                 await SetSelectedItem(root);
             }
         }
@@ -364,18 +412,29 @@ namespace KeeAnywhere.Forms
                 return m_cache[item];
 
             var info = new ItemInfo();
-            var result = await m_provider.GetChildrenByParentItem(item);
-            info.Children = result.OrderByDescending(_ => _.Type).ThenBy(_ => _.Name).ToArray();
-
             if (item.ParentReferenceId != null)
             {
                 var parent = m_cache.Keys.SingleOrDefault(_ => _.Id == item.ParentReferenceId);
                 if (parent != null)
                     info.Parent = parent;
                 else
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException("Parent of node not found!");
                 //await m_provider.GetItem(item.ParentReference.Id);
             }
+
+            IEnumerable<StorageProviderItem> result;
+
+            try
+            {
+                result = await m_provider.GetChildrenByParentItem(item);
+            }
+            catch (Exception ex)
+            {
+                MessageService.ShowWarning("Error loading file list.\r\nException:", ex);
+                return info;
+            }
+
+            info.Children = result.OrderByDescending(_ => _.Type).ThenBy(_ => _.Name).ToArray();
 
             m_cache.Add(item, info);
 
